@@ -97,6 +97,7 @@ calculate_fantasy_points <- function(
   dd2_value = 3,
   td3_value = 3
 ) {
+
   return(
     df %>%
       mutate(

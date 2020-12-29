@@ -57,39 +57,42 @@ ui <- fluidPage(
 
     fluidRow(
         column(
-            width = 1,
+            width = 2,
             numericInput("pts_value", "Points", .5, min = 0, step = .1)
         ),
         column(
-            width = 1,
+            width = 2,
             numericInput("reb_value", "Rebounds", 1, min = 0, step = .1)
         ),
         column(
-            width = 1,
+            width = 2,
             numericInput("asst_value", "Assists", 1, min = 0, step = .1)
         ),
         column(
-            width = 1,
+            width = 2,
             numericInput("trey_value", "3PM", .5, min = 0, step = .1)
         ),
         column(
-            width = 1,
-            numericInput("steal_value", "Steals", 2, min = 0, step = .1)
-        ),
+            width = 2,
+            numericInput("stl_value", "Steals", 2, min = 0, step = .1)
+        )
+    ),
+
+    fluidRow(
         column(
-            width = 1,
+            width = 2,
             numericInput("blk_value", "Blocks", 2, min = 0, step = .1)
         ),
         column(
-            width = 1,
-            numericInput("to_value", "TOs", -1, min = 0, step = .1)
+            width = 2,
+            numericInput("tov_value", "TOs", -1, min = 0, step = .1)
         ),
         column(
-            width = 1,
+            width = 2,
             numericInput("td3_value", "TDs", 3, min = 0, step = .1)
         ),
         column(
-            width = 1,
+            width = 2,
             numericInput("dd2_value", "DDs", 3, min = 0, step = .1)
         )
     ),
@@ -123,7 +126,7 @@ server <- function(input, output) {
     output$yoy_scatter_plot <- renderPlotly({
 
         value_var_names <- names(input)[grepl("_value", names(input))]
-        point_values <- map_dbl(value_var_names, function(x){
+        point_values <- map(value_var_names, function(x){
             input[[x]]
         })
         names(point_values) <- value_var_names
