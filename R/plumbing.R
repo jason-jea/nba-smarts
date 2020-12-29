@@ -85,11 +85,24 @@
   return(final_df)
 }
 
-calculate_fantasy_points <- function(df) {
+calculate_fantasy_points <- function(
+  df,
+  pts_value = .5,
+  reb_value = 1,
+  asst_value = 1,
+  trey_value = .5,
+  tov_value = -1,
+  stl_value = 2,
+  blk_value = 2,
+  dd2_value = 3,
+  td3_value = 3
+) {
   return(
     df %>%
       mutate(
-        points = as.integer(PTS)*.5 + as.integer(REB) + as.integer(AST) - as.integer(TOV) + as.integer(STL)*2 + as.integer(BLK)*2 + as.integer(DD2)*3 + as.integer(TD3)*3
+        points = as.integer(PTS)*pts_value + as.integer(REB)*reb_value + as.integer(FG3M)*trey_value +
+          as.integer(AST)*asst_value - as.integer(TOV)*tov_value + as.integer(STL)*stl_value +
+          as.integer(BLK)*blk_value + as.integer(DD2)*dd2_value + as.integer(TD3)*td3_value
       )
   )
 }
