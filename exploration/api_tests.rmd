@@ -1,0 +1,301 @@
+---
+title: "Testing API"
+output: html_notebook
+---
+
+setting headers, URL pattern, etc.
+```{r}
+library(httr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(jsonlite)
+library(nbastatR)
+library(purrr)
+library(stringr)
+library(RColorBrewer)
+library(scales)
+library(lubridate)
+library(everlaneR)
+library(aws.s3)
+#test <- seasons_rosters(2019)
+
+headers <- c(
+    `Host` = 'stats.nba.com',
+    `User-Agent` = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv =72.0) Gecko/20100101 Firefox/72.0',
+    `Accept` = 'application/json, text/plain, */*',
+    `Accept-Language` = 'en-US,en;q=0.5',
+    `Accept-Encoding` = 'gzip, deflate, br',
+    `x-nba-stats-origin` = 'stats',
+    `x-nba-stats-token` = 'true',
+    `Connection` = 'keep-alive',
+    `Referer` = 'https://www.nba.com/',
+    `Pragma` = 'no-cache',
+    `Cache-Control` = 'no-cache'
+  )
+raw_df <- 
+  fromJSON(content(GET(
+    url = "https://stats.nba.com/stats/commonallplayers?IsOnlyCurrentSeason=1&LeagueID=00&Season=2020-21",
+    add_headers(headers)
+  ), as="text"))$resultSets
+
+players_df <- data.frame(raw_df$rowSet[[1]], stringsAsFactors = FALSE)
+colnames(players_df) <- raw_df$headers[[1]]
+```
+
+trying to get season stats
+```{r}
+url <- "https://stats.nba.com/stats/playerdashboardbyyearoveryear?DateFrom=&DateTo=&GameSegment=&LastNGames=0&LeagueID=&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=&PaceAdjust=N&PerMode=Totals&Period=0&PlayerID=2544&PlusMinus=N&Rank=N&Season=2019-20&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&VsConference=&VsDivision="
+
+raw_df <- fromJSON(content(GET(url = url, add_headers(headers)), as = "text"))$resultSets
+stats_df <- data.frame(raw_df$rowSet[[1]], stringsAsFactors = FALSE)
+colnames(stats_df) <- raw_df$headers[[1]]
+```
+
+```{r}
+url <- "https://stats.nba.com/stats/playerdashboardbyyearoveryear?DateFrom=&DateTo=&GameSegment=&LastNGames=0&LeagueID=&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=&PaceAdjust=N&PerMode=Totals&Period=0&PlayerID=2544&PlusMinus=N&Rank=N&Season=2019-20&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&VsConference=&VsDivision="
+
+url_split <- str_split(str_split(str_split(url, "\\?")[[1]][2], "&")[[1]], "=")
+
+parameters <- unlist(map(url_split, function(x) {
+  vec <- x[2]
+  names(vec) <- x[1]
+  return(vec)
+}))
+
+parameters <- paste0(paste0(names(parameters), "=" ,parameters), collapse = "&")
+endpoint <- "playerdashboardbyyearoveryear"
+
+player_df <- .stats_request(endpoint = endpoint_str, params = parameters)
+stage_df <- player_df$resultSets
+final_df <- pmap_df(stage_df, function(name, headers, rowSet){
+  dataset <- data.frame(rowSet, stringsAsFactors = FALSE)
+  colnames(dataset) <- headers
+  
+  return(dataset)
+})
+```
+
+
+```{r}
+source("~/nba-smarts/R/plumbing.R")
+source("~/nba-smarts/R/league_stats.R")
+source("~/nba-smarts/R/player_stats.R")
+
+active_players <- get_active_players()
+
+player_stats <- map_dfr(active_players[,"PERSON_ID"],function(x){
+  stats <- get_player_season_stats(PlayerID=x) %>%
+    filter(GROUP_SET == "By Year")
+  return(stats)
+})
+
+player_stats %>% calculate_fantasy_points %>% head
+```
+
+```{r}
+player_stats %>% calculate_fantasy_points %>% head
+```
+
+```{r}
+widget_stats <- map_dfr(active_players[,"PERSON_ID"],function(x){
+  stats <- get_nba_fantasy_widget_stats(PlayerID=x)
+  return(stats)
+})
+
+widget_stats <- widget_stats %>%
+  mutate_at(vars(-PLAYER_NAME, -TEAM_ABBREVIATION, -PLAYER_POSITION), as.numeric)
+```
+
+```{r}
+player_stats <-
+  player_stats %>%
+    rename(PLAYER_ID = PlayerID)
+
+active_players <-
+  active_players %>%
+    mutate(PERSON_ID = as.integer(PERSON_ID)) %>%
+    inner_join(widget_stats %>% select(PLAYER_ID, PLAYER_POSITION),by=c("PERSON_ID" = "PLAYER_ID"))
+```
+
+```{r}
+player_stats %>%
+  filter(GROUP_VALUE == "2019-20") %>%
+  inner_join(
+    active_players %>% select(PLAYER_ID = PERSON_ID, PLAYER_POSITION),
+    by = c("PLAYER_ID")
+  ) %>% 
+  calculate_fantasy_points %>%
+  top_n(108, points/GP) %>%
+  ggplot(aes(x = points/GP, fill = PLAYER_POSITION)) + geom_density(alpha = .3) + theme_bw()
+```
+```{r}
+player_stats %>%
+  filter(GROUP_VALUE == "2019-20") %>%
+  inner_join(
+    active_players %>% select(PLAYER_ID = PERSON_ID, PLAYER_POSITION),
+    by = c("PLAYER_ID")
+  ) %>% 
+  calculate_fantasy_points %>%
+  top_n(108, points/GP) %>%
+  #group_by(PLAYER_POSITION) %>%
+  summarise(mean(points/GP), n(), min(points/GP))
+```
+
+```{r}
+player_stats %>%
+  filter(GROUP_VALUE %in% c("2019-20", "2018-19")) %>%
+  inner_join(
+    active_players %>% select(PLAYER_ID = PERSON_ID, PLAYER_POSITION, DISPLAY_FIRST_LAST),
+    by = c("PLAYER_ID")
+  ) %>% 
+  calculate_fantasy_points %>%
+  group_by(
+    DISPLAY_FIRST_LAST,
+    GROUP_VALUE
+  ) %>%
+  summarise(
+    GP = sum(GP),
+    points = sum(points)
+  ) %>%
+  ungroup %>%
+  mutate(
+    points_p_game = points/GP
+  ) %>%
+  select(name = DISPLAY_FIRST_LAST, points_p_game, year = GROUP_VALUE) %>%
+  spread(
+    key = year,
+    value = points_p_game
+  ) %>%
+  mutate(
+    `2018-19` = coalesce(`2018-19`, 0),
+    `2019-20` = coalesce(`2019-20`, 0),
+    label = case_when(
+      `2018-19` < 30 & `2019-20` > 30 ~ name,
+      `2018-19` < 20 & `2019-20` > 25 ~ name,
+      `2018-19` < 24 & `2019-20` > 28 ~ name,
+      `2018-19` < 10 & `2019-20` > 20 ~ name,
+      `2018-19` > 27 & `2019-20` < 25 ~ name,
+      `2018-19` > 24 & `2019-20` < 18 ~ name,
+      TRUE ~ ""
+    )
+  ) %>%
+  ggplot(aes(x = `2018-19`, y = `2019-20`, label = label)) + geom_point() + 
+  geom_text(nudge_y = 1.5) + theme_bw()
+```
+
+```{r}
+player_stats %>%
+  filter(GROUP_VALUE %in% c("2019-20")) %>%
+  inner_join(
+    active_players %>% select(PLAYER_ID = PERSON_ID, PLAYER_POSITION, DISPLAY_FIRST_LAST),
+    by = c("PLAYER_ID")
+  ) %>% 
+  calculate_fantasy_points %>%
+  group_by(
+    DISPLAY_FIRST_LAST,
+    GROUP_VALUE
+  ) %>%
+  summarise(
+    GP = sum(GP),
+    MP = sum(MIN),
+    points = sum(points)
+  ) %>%
+  ungroup %>%
+  mutate(
+    points_p_game = points/GP,
+    points_p_32 = ((points/MP) * (32*GP))/GP,
+    label = case_when(
+      points_p_game < 10 & points_p_32 > 26 ~ DISPLAY_FIRST_LAST,
+      points_p_game < 25 & points_p_32 > 27 ~ DISPLAY_FIRST_LAST,
+      points_p_game < 15 & points_p_32 > 25 ~ DISPLAY_FIRST_LAST,
+      points_p_game < 30 & points_p_32 > 30 ~ DISPLAY_FIRST_LAST,
+      points_p_game < 20 & points_p_32 > 26 ~ DISPLAY_FIRST_LAST,
+      TRUE ~ ""
+    )
+  ) %>%
+  select(name = DISPLAY_FIRST_LAST, points_p_32, points_p_game, label) %>%
+  ggplot(aes(x = points_p_game, y = points_p_32, label= label)) + geom_point() + theme_bw() +
+  geom_text(nudge_y = 1.5, size = 3) 
+```
+
+```{r}
+player_stats %>%
+  filter(GROUP_VALUE %in% c("2019-20")) %>%
+  inner_join(
+    active_players %>% select(PLAYER_ID = PERSON_ID, PLAYER_POSITION, DISPLAY_FIRST_LAST),
+    by = c("PLAYER_ID")
+  ) %>% 
+  inner_join(
+    player_stats %>% filter(GROUP_VALUE == "2020-21") %>% 
+      group_by(PLAYER_ID) %>%
+      summarise(mpg_2020 = sum(MIN)/sum(GP)) %>%
+      ungroup,
+    by = c("PLAYER_ID")
+  ) %>%
+  filter(
+    !PLAYER_POSITION %in% c("C", "C-F")
+  ) %>%
+  calculate_fantasy_points %>%
+  group_by(
+    DISPLAY_FIRST_LAST,
+    GROUP_VALUE,
+    mpg_2020
+  ) %>%
+  summarise(
+    GP = sum(GP),
+    MP = sum(MIN),
+    points = sum(points)
+  ) %>%
+  ungroup %>%
+  filter(
+    mpg_2020 >= 10
+  ) %>%
+  mutate(
+    points_p_game = points/GP,
+    points_p_32 = ((points/MP) * (32*GP))/GP,
+    mpg_2020_bucket = case_when(
+      mpg_2020 >= 27 ~ "starter minutes",
+      mpg_2020 >= 20 ~ "role player",
+      mpg_2020 >= 10 ~ "bench depth",
+      TRUE ~ "ignore"
+    ),
+    label = case_when(
+      points_p_game < 10 & points_p_32 > 26 & mpg_2020_bucket != "bench depth" ~ DISPLAY_FIRST_LAST,
+      points_p_game < 25 & points_p_32 > 25 & mpg_2020_bucket != "bench depth" ~ DISPLAY_FIRST_LAST,
+      points_p_game < 15 & points_p_32 > 20 & mpg_2020_bucket != "bench depth" ~ DISPLAY_FIRST_LAST,
+      points_p_game < 30 & points_p_32 > 30 & mpg_2020_bucket != "bench depth" ~ DISPLAY_FIRST_LAST,
+      points_p_game < 21 & points_p_32 > 23 & mpg_2020_bucket != "bench depth" ~ DISPLAY_FIRST_LAST,
+      TRUE ~ ""
+    )
+  ) %>%
+  #select(name = DISPLAY_FIRST_LAST, points_p_32, points_p_game, label, mpg_2020_bucket) %>%
+  ggplot(aes(x = points_p_game, y = points_p_32, label= label, colour = mpg_2020_bucket)) + 
+  geom_point() + theme_bw() +
+  geom_text(nudge_y = 1.5, size = 3) 
+```
+
+```{r}
+player_stats %>%
+  write.csv("player_stats.csv", row.names = FALSE)
+
+active_players %>%
+  write.csv("active_players.csv", row.names = FALSE)
+
+aws_creds <- get_aws_credentials()
+put_object(
+  file = "player_stats.csv",
+  object = "jj/nba/player_stats.csv",
+  bucket = "everlane-data",
+  key = aws_creds['aws_access_key_id'],
+  secret = aws_creds['aws_secret_access_key']
+)
+put_object(
+  file = "active_players.csv",
+  object = "jj/nba/active_players.csv",
+  bucket = "everlane-data",
+  key = aws_creds['aws_access_key_id'],
+  secret = aws_creds['aws_secret_access_key']
+)
+```
+

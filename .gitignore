@@ -1,0 +1,6 @@
+.Rproj.user
+app/nba-smarts/Data/*
+*.Rproj
+*.csv
+*.DS_Store
+*.dcf
