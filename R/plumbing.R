@@ -55,7 +55,7 @@
   )
 
   response <- fromJSON(content(GET(url, add_headers(headers)), as = "text"))
-
+  print(response)
   return(response)
 }
 

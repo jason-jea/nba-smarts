@@ -299,9 +299,6 @@ put_object(
 )
 ```
 
-```{r}
-
-```
 
 ```{r}
 test <- get_player_gamelogs(PlayerID = 203999)

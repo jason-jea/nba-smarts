@@ -1,4 +1,4 @@
-get_player_season_stats <- 
+get_player_season_stats <-
   function(
     DateFrom="",
     DateTo="",
@@ -25,15 +25,15 @@ get_player_season_stats <-
     VsDivision=""
   ) {
     endpoint_str <- "playerdashboardbyyearoveryear"
-    
+
     if (missing(Season)) {
-      Season <- paste0(year(Sys.Date()), "-", as.integer(substr(year(Sys.Date()), 1, 2)) + 1)
+      Season <- paste0(year(Sys.Date()), "-", as.integer(substr(year(Sys.Date()), 3, 4)) + 1)
     }
-    
+
     if (missing(PlayerID)) {
       stop("Please provide PlayerID.")
     }
-    
+
     params <- c(
       DateFrom=DateFrom,
       DateTo=DateTo,
@@ -59,16 +59,16 @@ get_player_season_stats <-
       VsConference=VsConference,
       VsDivision=VsDivision
     )
-    
+
     player_df <- .unpack_stats_request(.stats_request(endpoint = endpoint_str, params = params))
-    
+
     player_df <- player_df %>%
       mutate_at(vars(-GROUP_SET, -GROUP_VALUE, -TEAM_ABBREVIATION, -MAX_GAME_DATE, -CFPARAMS), as.numeric) %>%
       mutate(PlayerID = PlayerID)
     return(player_df)
   }
 
-get_nba_fantasy_widget_stats <- 
+get_nba_fantasy_widget_stats <-
   function(
     ActivePlayers="Y",
     LastNGames=0,
@@ -79,17 +79,17 @@ get_nba_fantasy_widget_stats <-
     TodaysPlayers="N",
     PlayerID
   ) {
-    
+
     endpoint_str <- "fantasywidget"
-    
+
     if (missing(Season)) {
-      Season <- paste0(year(Sys.Date()), "-", as.integer(substr(year(Sys.Date()), 1, 2)) + 1)
+      Season <- paste0(year(Sys.Date()), "-", as.integer(substr(year(Sys.Date()), 3, 4)) + 1)
     }
-    
+
     if (missing(PlayerID)) {
       stop("Please provide PlayerID.")
     }
-    
+
     params <- c(
       ActivePlayers=ActivePlayers,
       LastNGames=LastNGames,
@@ -100,14 +100,14 @@ get_nba_fantasy_widget_stats <-
       TodaysPlayers=TodaysPlayers,
       PlayerID=PlayerID
     )
-    
+
     widget_df <- .unpack_stats_request(.stats_request(endpoint = endpoint_str, params = params)) %>%
       mutate(PlayerID = PlayerID)
-    
+
     return(widget_df)
   }
 
-get_player_gamelogs <- 
+get_player_gamelogs <-
   function(
     DateFrom = "",
     DateTo = "",
@@ -122,15 +122,15 @@ get_player_gamelogs <-
     SeasonType = "Regular+Season"
   ) {
     endpoint_str <- "playergamelogs"
-    
+
     if (missing(Season)) {
-      Season <- paste0(year(Sys.Date()), "-", as.integer(substr(year(Sys.Date()), 1, 2)) + 1)
+      Season <- paste0(year(Sys.Date()), "-", as.integer(substr(year(Sys.Date()), 3, 4)) + 1)
     }
-    
+
     if (missing(PlayerID)) {
       stop("Please provide PlayerID.")
     }
-    
+
     params <- c(
       DateFrom = DateFrom,
       DateTo = DateTo,
@@ -144,11 +144,10 @@ get_player_gamelogs <-
       Season = Season,
       SeasonType = SeasonType
     )
-    
+
     game_logs <- .unpack_stats_request(.stats_request(endpoint = endpoint_str, params = params)) %>%
       mutate_at(vars(-SEASON_YEAR, -PLAYER_NAME, -TEAM_ABBREVIATION, -TEAM_NAME, -GAME_DATE, -MATCHUP, -WL), as.numeric)
-    
+
     return(game_logs)
   }
-  
-  
+
