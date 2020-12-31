@@ -21,17 +21,17 @@ library(scales)
 library(jsonlite)
 library(httr)
 
-source("app_data_prep.R")
+source("data.R")
 
-aws_creds <- get_aws_credentials()
+creds <- get_app_credentials("/Data/env")
 active_players <-
     read.delim(
         text = rawToChar(
             get_object(
-                object = "jj/nba/active_players.csv",
-                bucket = "everlane-data",
-                key = aws_creds["aws_access_key_id"],
-                secret = aws_creds["aws_secret_access_key"]
+                object = "stats/active_players.csv",
+                bucket = "nba-smarts",
+                key = creds["aws_access_key_id"],
+                secret = creds["aws_secret_access_key"]
             )
         ),
         sep = ",",
@@ -43,10 +43,10 @@ player_stats <-
     read.delim(
         text = rawToChar(
             get_object(
-                object = "jj/nba/player_stats.csv",
-                bucket = "everlane-data",
-                key = aws_creds["aws_access_key_id"],
-                secret = aws_creds["aws_secret_access_key"]
+                object = "stats/player_stats.csv",
+                bucket = "nba-smarts",
+                key = creds["aws_access_key_id"],
+                secret = creds["aws_secret_access_key"]
             )
         ),
         sep = ",",
@@ -155,6 +155,11 @@ ui <- fluidPage(
                 column(
                     width = 2,
                     selectizeInput('season', 'Season(s)', choices = c(2020,2019, 2018, 2017, 2016, 2015), selected = 2020)
+                ),
+                column(
+                    width = 2,
+                    br(),
+                    actionButton("get_player_data", "Get Player Data")
                 )
             ),
             fluidRow(
@@ -248,10 +253,12 @@ server <- function(input, output) {
         )
     })
 
-    get_player_logs <- reactive({
+    get_player_logs <- eventReactive(input$get_player_data, {
         ids <- active_players[active_players$DISPLAY_FIRST_LAST %in% input$player_names,"PERSON_ID"]
+        print(ids)
         logs <-
             map_dfr(ids, function(x){
+                print(paste0("getting log for player ", x))
                 get_player_gamelogs(
                     PlayerID = x,
                     Season = paste0(input$season, "-", as.integer(substr(input$season, 3, 4)) + 1)

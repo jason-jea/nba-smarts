@@ -282,18 +282,18 @@ player_stats %>%
 active_players %>%
   write.csv("active_players.csv", row.names = FALSE)
 
-aws_creds <- get_aws_credentials()
+aws_creds <- get_app_aws_credentials("~/nba-smarts/app/nba-smarts/Data/credentials")
 put_object(
   file = "player_stats.csv",
-  object = "jj/nba/player_stats.csv",
-  bucket = "everlane-data",
+  object = "stats/player_stats.csv",
+  bucket = "nba-smarts",
   key = aws_creds['aws_access_key_id'],
   secret = aws_creds['aws_secret_access_key']
 )
 put_object(
   file = "active_players.csv",
-  object = "jj/nba/active_players.csv",
-  bucket = "everlane-data",
+  object = "stats/active_players.csv",
+  bucket = "nba-smarts",
   key = aws_creds['aws_access_key_id'],
   secret = aws_creds['aws_secret_access_key']
 )
@@ -301,6 +301,53 @@ put_object(
 
 
 ```{r}
-test <- get_player_gamelogs(PlayerID = 203999)
+season <- "2020"
+ids <- unique(active_players$PERSON_ID)
+
+player_logs_2020 <-
+  map_dfr(ids, function(x){
+      print(paste0("getting log for player ", x))
+      get_player_gamelogs(
+          PlayerID = x,
+          Season = paste0(season, "-", as.integer(substr(season, 3, 4)) + 1)
+      )[,c(1,3,5,8:13,15:16,18:19,23:27,31,34:35)]
+  })
+player_logs_2020 %>%
+  write.csv("player_logs_2020.csv", row.names = FALSE)
+
+creds <- get_app_credentials("~/nba-smarts/app/nba-smarts/Data/credentials")
+put_object(
+  file = "player_logs_2020.csv",
+  object = "stats/player_logs_2020.csv",
+  bucket = "nba-smarts",
+  key = creds['aws_access_key_id'],
+  secret = creds['aws_secret_access_key']
+)
+
+season <- "2019"
+player_logs_2019 <-
+  map_dfr(ids, function(x){
+      print(paste0("getting log for player ", x))
+      df <- get_player_gamelogs(
+          PlayerID = x,
+          Season = paste0(season, "-", as.integer(substr(season, 3, 4)) + 1)
+      )[,c(1,3,5,8:13,15:16,18:19,23:27,31,34:35)]
+      
+      Sys.sleep(2)
+      
+      return(df)
+  })
+
+player_logs_2019 %>%
+  write.csv("player_logs_2019.csv", row.names = FALSE)
+
+creds <- get_app_credentials("~/nba-smarts/app/nba-smarts/Data/credentials")
+put_object(
+  file = "player_logs_2019.csv",
+  object = "stats/player_logs_2019.csv",
+  bucket = "nba-smarts",
+  key = aws_creds['aws_access_key_id'],
+  secret = aws_creds['aws_secret_access_key']
+)
 ```
 
