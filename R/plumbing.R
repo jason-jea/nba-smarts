@@ -42,7 +42,7 @@
 
   headers <- c(
     `Host` = 'stats.nba.com',
-    `User-Agent` = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv =72.0) Gecko/20100101 Firefox/72.0',
+    `User-Agent` = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.50 Safari/537.36',
     `Accept` = 'application/json, text/plain, */*',
     `Accept-Language` = 'en-US,en;q=0.5',
     `Accept-Encoding` = 'gzip, deflate, br',
@@ -50,6 +50,7 @@
     `x-nba-stats-token` = 'true',
     `Connection` = 'keep-alive',
     `Referer` = 'https://www.nba.com/',
+    `Origin` = 'https://www.nba.com',
     `Pragma` = 'no-cache',
     `Cache-Control` = 'no-cache'
   )
