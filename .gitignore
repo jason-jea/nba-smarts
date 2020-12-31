@@ -4,3 +4,4 @@ app/nba-smarts/Data/*
 *.csv
 *.DS_Store
 *.dcf
+*.Rhistory
