@@ -108,3 +108,7 @@ calculate_fantasy_points <- function(
       )
   )
 }
+
+gen_season_year_str <- function(x) {
+  return(paste0(x, "-", as.integer(substr(x, 3, 4)) + 1))
+}
