@@ -60,6 +60,42 @@
   return(response)
 }
 
+#' Unpacks the JSON response from a request to a stats.nba.com endpoint.  Attempts to return a clean dataframe with predictable column headers.
+#' Always used in conjunction with .stats_request()
+#' @param response Respronse content as a JSON string
+#' @return Dataframe containing results from response.
+#' @examples
+#' \dontrun{
+#' parameters <- c(
+#'   "DateFrom"="",
+#'   "DateTo"="",
+#'   "GameSegment"="",
+#'   "LastNGames"="0",
+#'   "LeagueID"="",
+#'   "Location"="",
+#'   "MeasureType"="Base",
+#'   "Month"="0",
+#'   "OpponentTeamID"="0",
+#'   "Outcome"="",
+#'   "PORound"="",
+#'   "PaceAdjust"="N",
+#'   "PerMode"="Totals",
+#'   "Period"="0",
+#'   "PlayerID"="2544",
+#'   "PlusMinus"="N",
+#'   "Rank"="N",
+#'   "Season"="2019-20",
+#'   "SeasonSegment"="",
+#'   "SeasonType"="Regular+Season",
+#'   "ShotClockRange"="",
+#'   "VsConference"="",
+#'   "VsDivision"=""
+#' )
+#'
+#' endpoint_str <- "playerdashboardbyyearoveryear"
+#'
+#' final_df <- .unpack_stats_request(.stats_request(endpoint = endpoint_str, params = parameters))
+#' }
 .unpack_stats_request <- function(response) {
   stage_df <- response$resultSets
 
@@ -86,6 +122,10 @@
   return(final_df)
 }
 
+#' Calculate fantasy point total based on a standard set of categories.
+#' @param df Dataframe containing totals of different statsitcal categories
+#' @param ... Value associated with respective stastical category
+#' @return Dataframe passed into df argument with one additional column named points, contianing the calculated fantasy points value of that row
 calculate_fantasy_points <- function(
   df,
   pts_value = .5,
@@ -109,6 +149,11 @@ calculate_fantasy_points <- function(
   )
 }
 
+#' Constructs a season year string from a year integer
+#' @param x integer representing year
+#' @return Season year string
+#' @examples
+#' gen_season_year_str(2020)
 gen_season_year_str <- function(x) {
   return(paste0(x, "-", as.integer(substr(x, 3, 4)) + 1))
 }
