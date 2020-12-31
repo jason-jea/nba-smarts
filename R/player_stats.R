@@ -60,6 +60,8 @@ get_player_season_stats <-
       VsDivision=VsDivision
     )
 
+    print(paste0("Getting career stats for player ", PlayerID))
+
     player_df <- .unpack_stats_request(.stats_request(endpoint = endpoint_str, params = params))
 
     player_df <- player_df %>%
