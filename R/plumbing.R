@@ -108,35 +108,3 @@ calculate_fantasy_points <- function(
       )
   )
 }
-
-get_app_aws_credentials <- function(file_path) {
-  # reads keys from credentials file in the ~/.aws/ folder (requires user to have aws cli installed)
-  aws_creds_file =
-    tryCatch({
-      file(file_path, "r")
-    }, warning = function(w) {
-      file(paste0("./Data/",'credentials'), "r")
-    }, error = function(e) {
-      file(paste0("./Data/",'credentials'), "r")
-    })
-  # initialize empty list to store aws credentials
-  aws_creds <- list()
-
-  i = 0
-  # read in list of credentials
-  while (TRUE) {
-    # loop through lines in credentials files
-    line = readLines(aws_creds_file, n = 1, warn = FALSE)
-    if ( (length(line) == 0 ) | (i==3)) {
-      break # break loop if line is empty
-    }
-    line <- gsub("\n", "", gsub(" ", "", line)) # basic scrubbing of newline character and empty spaces
-
-    # create key-value element in list for credential in current line
-    # key is character before '=', value is character after '='
-    aws_creds[[substr(line, 1, regexpr('=', line)[1]- 1)]] <- substr(line, regexpr('=', line)[1] + 1, nchar(line))
-    i = i+1
-  }
-  close(aws_creds_file)
-  return(aws_creds)
-}
