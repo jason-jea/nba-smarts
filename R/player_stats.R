@@ -27,6 +27,11 @@ get_player_season_stats <-
     endpoint_str <- "playerdashboardbyyearoveryear"
 
     if (missing(Season)) {
+      if (month(Sys.Date()) >= 1 & month(Sys.Date()) < 9) {
+        year <- year(Sys.Date()) - 1
+      } else {
+        year <- year(Sys.Date())
+      }
       Season <- paste0(year(Sys.Date()), "-", as.integer(substr(year(Sys.Date()), 3, 4)) + 1)
     }
 
@@ -84,6 +89,11 @@ get_nba_fantasy_widget_stats <-
     endpoint_str <- "fantasywidget"
 
     if (missing(Season)) {
+      if (month(Sys.Date()) >= 1 & month(Sys.Date()) < 9) {
+        year <- year(Sys.Date()) - 1
+      } else {
+        year <- year(Sys.Date())
+      }
       Season <- paste0(year(Sys.Date()), "-", as.integer(substr(year(Sys.Date()), 3, 4)) + 1)
     }
 
@@ -124,6 +134,11 @@ get_player_gamelogs <-
     endpoint_str <- "playergamelogs"
 
     if (missing(Season)) {
+      if (month(Sys.Date()) >= 1 & month(Sys.Date()) < 9) {
+        year <- year(Sys.Date()) - 1
+      } else {
+        year <- year(Sys.Date())
+      }
       Season <- paste0(year(Sys.Date()), "-", as.integer(substr(year(Sys.Date()), 3, 4)) + 1)
     }
 
