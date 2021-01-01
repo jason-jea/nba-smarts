@@ -116,6 +116,8 @@
       colnames(dataset) <- headers
     }
 
+    names(dataset) <- tolower(names(dataset))
+
     return(dataset)
   })
 
@@ -142,9 +144,9 @@ calculate_fantasy_points <- function(
   return(
     df %>%
       mutate(
-        points = as.integer(PTS)*pts_value + as.integer(REB)*reb_value + as.integer(FG3M)*trey_value +
-          as.integer(AST)*asst_value - as.integer(TOV)*tov_value + as.integer(STL)*stl_value +
-          as.integer(BLK)*blk_value + as.integer(DD2)*dd2_value + as.integer(TD3)*td3_value
+        points = as.integer(pts)*pts_value + as.integer(reb)*reb_value + as.integer(fg3m)*trey_value +
+          as.integer(ast)*asst_value - as.integer(tov)*tov_value + as.integer(stl)*stl_value +
+          as.integer(blk)*blk_value + as.integer(dd2)*dd2_value + as.integer(td3)*td3_value
       )
   )
 }

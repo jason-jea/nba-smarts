@@ -65,8 +65,7 @@ get_player_season_stats <-
     player_df <- .unpack_stats_request(.stats_request(endpoint = endpoint_str, params = params))
 
     player_df <- player_df %>%
-      mutate_at(vars(-GROUP_SET, -GROUP_VALUE, -TEAM_ABBREVIATION, -MAX_GAME_DATE, -CFPARAMS), as.numeric) %>%
-      mutate(PlayerID = PlayerID)
+      mutate_at(vars(-group_set, -group_value, -team_abbreviation, -max_game_date, -cfparams), as.numeric)
     return(player_df)
   }
 
@@ -103,8 +102,7 @@ get_nba_fantasy_widget_stats <-
       PlayerID=PlayerID
     )
 
-    widget_df <- .unpack_stats_request(.stats_request(endpoint = endpoint_str, params = params)) %>%
-      mutate(PlayerID = PlayerID)
+    widget_df <- .unpack_stats_request(.stats_request(endpoint = endpoint_str, params = params))
 
     return(widget_df)
   }
@@ -148,7 +146,7 @@ get_player_gamelogs <-
     )
 
     game_logs <- .unpack_stats_request(.stats_request(endpoint = endpoint_str, params = params)) %>%
-      mutate_at(vars(-SEASON_YEAR, -PLAYER_NAME, -TEAM_ABBREVIATION, -TEAM_NAME, -GAME_DATE, -MATCHUP, -WL), as.numeric)
+      mutate_at(vars(-season_year, -player_name, -team_abbreviation, -team_name, -game_date, -matchup, -wl), as.numeric)
 
     return(game_logs)
   }
