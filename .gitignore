@@ -6,3 +6,4 @@ app/nba-smarts/Data/*
 app/nba-smarts/.DS_Store
 *.dcf
 *.Rhistory
+*DS_Store
