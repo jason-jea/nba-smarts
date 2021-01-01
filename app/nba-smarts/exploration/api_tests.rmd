@@ -78,9 +78,7 @@ final_df <- pmap_df(stage_df, function(name, headers, rowSet){
 
 
 ```{r}
-source("~/nba-smarts/R/plumbing.R")
-source("~/nba-smarts/R/league_stats.R")
-source("~/nba-smarts/R/player_stats.R")
+library(nbasmarts)
 
 active_players <- get_active_players()
 

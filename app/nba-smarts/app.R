@@ -21,8 +21,8 @@ library(scales)
 library(jsonlite)
 library(httr)
 library(dbplyr)
-
-source("data.R")
+library(RPostgreSQL)
+library(RColorBrewer)
 
 creds <- get_app_credentials("/Data/env")
 con <- create_db_conn(creds)
@@ -111,7 +111,7 @@ ui <- fluidPage(
             fluidRow(
                 column(
                     width = 5,
-                    plotlyOutput(
+                    plotOutput(
                         "yoy_scatter_plot",
                         height = 500
                     )
@@ -254,35 +254,40 @@ server <- function(input, output) {
         DT::datatable(get_player_logs(), options = list(pageLength = 10))
     })
 
-    output$player_ts <- renderPlotly({
+    output$player_ts <- renderPlot({
         if (length(input$player_names) == 0) {
             NULL
         }
         else {
             point_values <- fetch_point_values()
+            p <-
+                get_player_logs() %>%
+                    calculate_fantasy_points(
+                        df = .,
+                        pts_value = point_values$pts_value,
+                        reb_value = point_values$reb_value,
+                        asst_value = point_values$asst_value,
+                        trey_value = point_values$trey_value,
+                        stl_value = point_values$stl_value,
+                        blk_value = point_values$blk_value,
+                        tov_value = point_values$tov_value,
+                        td3_value = point_values$td3_value,
+                        dd2_value = point_values$dd2_value
+                    ) %>%
+                    group_by(
+                        week = floor_date(as.Date(game_date), "week"),
+                        player_name
+                    ) %>%
+                    summarise(
+                        ppg = sum(points)/n()
+                    ) %>%
+                    ungroup %>%
+                    ggplot(aes(x = week, y = ppg, colour = player_name)) +
+                    geom_line() +
+                    theme_bw() +
+                    scale_colour_brewer(palette = "Dark2")
 
-            get_player_logs() %>%
-                calculate_fantasy_points(
-                    df = .,
-                    pts_value = point_values$pts_value,
-                    reb_value = point_values$reb_value,
-                    asst_value = point_values$asst_value,
-                    trey_value = point_values$trey_value,
-                    stl_value = point_values$stl_value,
-                    blk_value = point_values$blk_value,
-                    tov_value = point_values$tov_value,
-                    td3_value = point_values$td3_value,
-                    dd2_value = point_values$dd2_value
-                ) %>%
-                group_by(
-                    week = floor_date(as.Date(game_date), "day"),
-                    player_name
-                ) %>%
-                summarise(
-                    ppg = sum(points)/n()
-                ) %>%
-                ungroup %>%
-                ggplot(aes(x = week, y = ppg, colour = player_name)) + geom_line() + theme_bw()
+            return(p)
         }
     })
 }

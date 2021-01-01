@@ -3,5 +3,6 @@ app/nba-smarts/Data/*
 *.Rproj
 *.csv
 *.DS_Store
+app/nba-smarts/.DS_Store
 *.dcf
 *.Rhistory

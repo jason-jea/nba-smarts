@@ -16,7 +16,7 @@ library(aws.s3)
 library(nbasmarts)
 library(RPostgreSQL)
 
-source("app/nba-smarts/utils.R")
+source("R/utils.R")
 
 season <- "2020"
 test <- get_player_gamelogs(
