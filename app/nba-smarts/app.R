@@ -20,39 +20,22 @@ library(lubridate)
 library(scales)
 library(jsonlite)
 library(httr)
+library(dbplyr)
 
 source("data.R")
 
 creds <- get_app_credentials("/Data/env")
-active_players <-
-    read.delim(
-        text = rawToChar(
-            get_object(
-                object = "stats/active_players.csv",
-                bucket = "nba-smarts",
-                key = creds["aws_access_key_id"],
-                secret = creds["aws_secret_access_key"]
-            )
-        ),
-        sep = ",",
-        header = TRUE,
-        stringsAsFactors = FALSE
-    )
+con <- create_db_conn(creds)
 
+active_players_db <- tbl(con, in_schema("stats", "active_players"))
+active_players <-
+    active_players_db %>% collect()
+
+player_stats_db <- tbl(con, in_schema("stats", "player_season_totals"))
 player_stats <-
-    read.delim(
-        text = rawToChar(
-            get_object(
-                object = "stats/player_stats.csv",
-                bucket = "nba-smarts",
-                key = creds["aws_access_key_id"],
-                secret = creds["aws_secret_access_key"]
-            )
-        ),
-        sep = ",",
-        header = TRUE,
-        stringsAsFactors = FALSE
-    )
+    player_stats_db %>% collect()
+
+player_game_logs_db <- tbl(con, in_schema("stats", "player_game_logs"))
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -118,7 +101,7 @@ ui <- fluidPage(
         ),
         column(
             width = 2,
-            selectInput('position', 'Positions', unique(active_players$PLAYER_POSITION), selected = unique(active_players$PLAYER_POSITION), multiple = TRUE)
+            selectInput('position', 'Positions', unique(active_players$player_position), selected = unique(active_players$player_position), multiple = TRUE)
         )
     ),
     tabsetPanel(
@@ -209,7 +192,7 @@ server <- function(input, output) {
                 curr_year = input$curr_year,
                 point_values = point_values
             )
-        return(yoy_df[yoy_df$PLAYER_POSITION %in% input$position,])
+        return(yoy_df[yoy_df$player_position %in% input$position,])
     })
 
     output$yoy_scatter_plot <- renderPlotly({
@@ -225,7 +208,7 @@ server <- function(input, output) {
             get_yoy_df() %>%
                 arrange(desc(coalesce(curr_year,0))) %>%
                 select(-prev_year) %>%
-                rename(!!input$curr_year := curr_year, pos = PLAYER_POSITION)
+                rename(!!input$curr_year := curr_year, pos = player_position)
 
         return(DT::datatable(curr_year_leaderboard, options = list(pageLength = 10)))
     })
@@ -235,13 +218,13 @@ server <- function(input, output) {
             get_yoy_df() %>%
                 arrange(desc(coalesce(prev_year,0))) %>%
                 select(-curr_year) %>%
-                rename(!!input$prev_year := prev_year, pos = PLAYER_POSITION)
+                rename(!!input$prev_year := prev_year, pos = player_position)
 
         return(DT::datatable(prev_year_leaderboard, options = list(pageLength = 10)))
     })
 
     get_player_choices <- reactive({
-        unique(active_players[active_players$PLAYER_POSITION %in% input$position,]$DISPLAY_FIRST_LAST)
+        unique(active_players[active_players$player_position %in% input$position,]$display_first_last)
     })
 
     output$player_select <- renderUI({
@@ -254,16 +237,16 @@ server <- function(input, output) {
     })
 
     get_player_logs <- eventReactive(input$get_player_data, {
-        ids <- active_players[active_players$DISPLAY_FIRST_LAST %in% input$player_names,"PERSON_ID"]
+        ids <- active_players[active_players$display_first_last %in% input$player_names,]$person_id
+        season_str <- gen_season_year_str(input$season)
+        print(season_str)
         print(ids)
-        logs <-
-            map_dfr(ids, function(x){
-                print(paste0("getting log for player ", x))
-                get_player_gamelogs(
-                    PlayerID = x,
-                    Season = paste0(input$season, "-", as.integer(substr(input$season, 3, 4)) + 1)
-                )[,c(1,3,5,8:13,15:16,18:19,23:27,31,34:35)]
-            })
+        print(player_game_logs_db %>%
+                  filter(player_id %in% ids & season_year == season_str) %>%
+                  show_query)
+        logs <- player_game_logs_db %>%
+            filter(player_id %in% ids & season_year == season_str) %>%
+            collect
         return(logs)
     })
 
@@ -292,14 +275,14 @@ server <- function(input, output) {
                     dd2_value = point_values$dd2_value
                 ) %>%
                 group_by(
-                    week = floor_date(as.Date(GAME_DATE), "day"),
-                    PLAYER_NAME
+                    week = floor_date(as.Date(game_date), "day"),
+                    player_name
                 ) %>%
                 summarise(
                     ppg = sum(points)/n()
                 ) %>%
                 ungroup %>%
-                ggplot(aes(x = week, y = ppg, colour = PLAYER_NAME)) + geom_line() + theme_bw()
+                ggplot(aes(x = week, y = ppg, colour = player_name)) + geom_line() + theme_bw()
         }
     })
 }

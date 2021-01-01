@@ -18,12 +18,29 @@ library(RPostgreSQL)
 
 source("app/nba-smarts/utils.R")
 
+season <- "2020"
 test <- get_player_gamelogs(
   PlayerID = 203500,
   Season = paste0(season, "-", as.integer(substr(season, 3, 4)) + 1)
 )
 
 active_players <- get_active_players()
+
+widget_stats <- map_dfr(active_players[,"PERSON_ID"],function(x){
+  print(match(x, active_players[,"PERSON_ID"]))
+  stats <- get_nba_fantasy_widget_stats(PlayerID=x)
+  Sys.sleep(1)
+  return(stats)
+})
+
+widget_stats <- widget_stats %>%
+  mutate_at(vars(-PLAYER_NAME, -TEAM_ABBREVIATION, -PLAYER_POSITION), as.numeric)
+names(widget_stats) <- tolower(names(widget_stats))
+
+active_players <-
+  active_players %>%
+  mutate(PERSON_ID = as.integer(PERSON_ID)) %>%
+  inner_join(widget_stats %>% select(PLAYER_ID, PLAYER_POSITION),by=c("PERSON_ID" = "PLAYER_ID"))
 
 player_stats <- map_dfr(active_players[,"PERSON_ID"],function(x){
   stats <- get_player_season_stats(PlayerID=x) %>%
@@ -107,23 +124,11 @@ player_logs_p3 <-
       return(df)
     })
   })
-
+player_logs <- rbind.data.frame(player_logs_p1, player_logs_p2, player_logs_p3)
+player_logs <- player_logs[,c(2,1,3:22)]
 names(player_logs) <- tolower(names(player_logs))
-names(player_logs)[1] <- "player_id"
-dbWriteTable(con, c("stats", "player_game_logs"), player_logs, row.names=FALSE, append=TRUE)
-
-player_logs %>%
-  write.csv("~/nba-smarts/exploration/player_logs.csv", row.names = FALSE)
 
 creds <- get_app_credentials("~/nba-smarts/app/nba-smarts/Data/env")
-put_object(
-  file = "~/nba-smarts/exploration/player_logs.csv",
-  object = "stats/player_logs.csv",
-  bucket = "nba-smarts",
-  key = creds['aws_access_key_id'],
-  secret = creds['aws_secret_access_key']
-)
-
 drv <- dbDriver("PostgreSQL")
 con <- dbConnect(
   drv,
@@ -134,7 +139,19 @@ con <- dbConnect(
   password = creds["proddb_password"]
 )
 
-active_players <- get_active_players()
+dbWriteTable(con, c("stats", "player_game_logs"), player_logs, row.names=FALSE, append=TRUE)
+
+player_logs %>%
+  write.csv("~/nba-smarts/exploration/player_logs.csv", row.names = FALSE)
+
+put_object(
+  file = "~/nba-smarts/exploration/player_logs.csv",
+  object = "stats/player_logs.csv",
+  bucket = "nba-smarts",
+  key = creds['aws_access_key_id'],
+  secret = creds['aws_secret_access_key']
+)
+
 names(active_players) <- tolower(names(active_players))
 dbWriteTable(con, c("stats", "active_players"), active_players, row.names=FALSE, append=TRUE)
 
