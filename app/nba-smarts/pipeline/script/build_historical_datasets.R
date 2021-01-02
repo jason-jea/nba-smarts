@@ -42,9 +42,9 @@ active_players <-
   mutate(PERSON_ID = as.integer(PERSON_ID)) %>%
   inner_join(widget_stats %>% select(PLAYER_ID, PLAYER_POSITION),by=c("PERSON_ID" = "PLAYER_ID"))
 
-player_stats <- map_dfr(active_players[,"PERSON_ID"],function(x){
+player_stats <- map_dfr(active_players[,"person_id", drop=TRUE],function(x){
   stats <- get_player_season_stats(PlayerID=x) %>%
-    filter(GROUP_SET == "By Year")
+    filter(group_value == "By Year")
 
   Sys.sleep(2)
   return(stats)
@@ -165,3 +165,35 @@ names(player_stats) <- tolower(names(player_stats))
 names(player_stats)[1] <- "player_id"
 names(player_stats)[2] <- "season"
 dbWriteTable(con, c("stats", "player_season_totals"), player_stats, row.names=FALSE, append=TRUE)
+
+dbSendQuery(con,"
+            insert into stats.player_season_totals
+select player_id, season_year,
+ team_id,
+team_abbreviation,
+max(game_date) as max_game_date,
+count(*) as gp,
+count(case when wl = 'W' then 1 else null end) as w,
+count(case when wl = 'L' then 1 else null end) as l,
+sum(\"min\") as \"min\",
+sum(fgm) as fgm,
+sum(fga) as fga,
+sum(fg3m) as fg3m,
+sum(fg3a) as fg3a,
+sum(ftm) as ftm,
+sum(fta) as fta,
+null::integer as oreb,
+null::integer as dreb,
+sum(reb) as reb,
+sum(ast) as ast,
+sum(tov) as tov,
+sum(stl) as stl,
+sum(blk) as blk,
+sum(pts) as pts,
+sum(dd2) as dd2,
+sum(td3) as td3
+from stats.player_game_logs
+join (select distinct team_id, team_abbreviation from stats.active_players) a using(team_abbreviation)
+group by 1,2,3,4
+ ;
+            ")
