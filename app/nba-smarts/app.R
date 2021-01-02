@@ -23,6 +23,7 @@ library(httr)
 library(dbplyr)
 library(RPostgreSQL)
 library(RColorBrewer)
+library(R6)
 
 creds <- get_app_credentials("/Data/env")
 con <- create_db_conn(creds)
