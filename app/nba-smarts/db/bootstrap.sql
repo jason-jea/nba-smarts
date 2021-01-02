@@ -19,7 +19,9 @@ create table stats.active_players(
         team_code varchar(30),
         games_played_flag varchar(5),
         otherleague_experience_ch varchar(10),
-        player_position varchar(10)
+        player_position varchar(10),
+        row_created_at timestamp default now(),
+        row_updated_at timestamp default now()
 )
 ;
 create unique index person_id_idx on stats.active_players (person_id)
@@ -51,7 +53,9 @@ create table stats.player_season_totals (
         blk integer,
         pts integer,
         dd2 integer,
-        td3 integer
+        td3 integer,
+        row_created_at timestamp default now(),
+        row_updated_at timestamp default now()
 );
 create index player_id_idx on stats.player_season_totals (player_id)
 ;
@@ -82,7 +86,9 @@ create table stats.player_game_logs(
         blk integer,
         pts integer,
         dd2 integer,
-        td3 integer
+        td3 integer,
+        row_created_at timestamp default now(),
+        row_updated_at timestamp default now()
 )
 ;
 create index player_id_game_idx on stats.player_game_logs (player_id)
@@ -92,3 +98,31 @@ create index season_game_idx on stats.player_game_logs (season_year)
 create index game_date_idx on stats.player_game_logs (game_date)
 ;
 grant all on stats.player_game_logs to app;
+
+
+create schema fantasy;
+grant usage on schema fantasy to app;
+
+create table fantasy.teams(
+        id serial primary key,
+        "name" varchar(1000),
+        owner_name varchar(1000),
+        row_created_at timestamp default now(),
+        row_updated_at timestamp default now()
+);
+grant all on fantasy.teams to app;
+
+insert into fantasy.teams ("name", owner_name)
+values('JEAJEA', 'Jason Jea'),
+        ('Keith', 'Keith Chan'),
+        ('Daddy Doncic', 'Gabe'),
+        ('Bimbo', 'Alex'),
+        ('Covid Free 100%', 'Wayne Yu'),
+        ('Team Squanchee', 'Ryan Newsom'),
+        ('Team effx', 'Kelvin Chan'),
+        ('Team bchang55', 'Brian Chang'),
+        ('Team Jermmey', 'Jeremy Tsui'),
+        ('Team pookyd', 'Kelvin Chan'),
+        ('Team stephenhe', 'Stephen He'),
+        ('Team andyflaco', 'Andy Wong')
+;
