@@ -32,7 +32,7 @@ get_player_season_stats <-
       } else {
         year <- year(Sys.Date())
       }
-      Season <- paste0(year(Sys.Date()), "-", as.integer(substr(year(Sys.Date()), 3, 4)) + 1)
+      Season <- paste0(year, "-", as.integer(substr(year, 3, 4)) + 1)
     }
 
     if (missing(PlayerID)) {
@@ -94,7 +94,7 @@ get_nba_fantasy_widget_stats <-
       } else {
         year <- year(Sys.Date())
       }
-      Season <- paste0(year(Sys.Date()), "-", as.integer(substr(year(Sys.Date()), 3, 4)) + 1)
+      Season <- paste0(year, "-", as.integer(substr(year, 3, 4)) + 1)
     }
 
     if (missing(PlayerID)) {
@@ -139,7 +139,7 @@ get_player_gamelogs <-
       } else {
         year <- year(Sys.Date())
       }
-      Season <- paste0(year(Sys.Date()), "-", as.integer(substr(year(Sys.Date()), 3, 4)) + 1)
+      Season <- paste0(year, "-", as.integer(substr(year, 3, 4)) + 1)
     }
 
     if (missing(PlayerID)) {
