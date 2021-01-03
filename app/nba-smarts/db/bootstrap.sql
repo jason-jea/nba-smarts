@@ -2,7 +2,7 @@ create user app;
 alter user app with password [YOUR_PASSWORD];
 
 create schema stats;
-grant usage on schema stats to app;
+grant usage on schema stats to app;     
 
 create table stats.active_players(
         person_id integer primary key,
@@ -20,6 +20,7 @@ create table stats.active_players(
         games_played_flag varchar(5),
         otherleague_experience_ch varchar(10),
         player_position varchar(10),
+        fantasy_team_id integer,
         row_created_at timestamp default now(),
         row_updated_at timestamp default now()
 )

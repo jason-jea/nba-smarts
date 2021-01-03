@@ -149,8 +149,18 @@ db_upsert <- function(con, target_tbl, source_tbl, keys) {
 }
 
 db_IsValid <- function(dbObj) {
-  isValid <- tryCatch({dbGetInfo(dbObj)},
-                      error = function(e) NULL)
+  isValid <- tryCatch(
+    dbSendQuery(dbObj, "select TRUE"),
+    error = function(e) {
+      e <- NULL
+      return(e)
+    },
+    warning = function(w) {
+      w <- NULL
+      return(w)
+    }
+  )
+
   !is.null(isValid)
 }
 
@@ -160,7 +170,19 @@ establish_db_connection <- function() {
   }
 
   if (!exists("con") | !db_IsValid(con)) {
+    lapply(dbListConnections(drv = dbDriver("PostgreSQL")), function(x) {
+      results <- dbListResults(x)
+      if (length(results) > 0) {
+        dbClearResult(results[[1]])
+      }
+      dbDisconnect(conn = x)
+    })
     con <- create_db_conn(creds)
+  } else {
+    results <- dbListResults(con)
+    if (length(results) > 0) {
+      dbClearResult(results[[1]])
+    }
   }
 
   return(con)
