@@ -145,7 +145,7 @@ calculate_fantasy_points <- function(
     df %>%
       mutate(
         points = as.integer(pts)*pts_value + as.integer(reb)*reb_value + as.integer(fg3m)*trey_value +
-          as.integer(ast)*asst_value - as.integer(tov)*tov_value + as.integer(stl)*stl_value +
+          as.integer(ast)*asst_value + as.integer(tov)*tov_value + as.integer(stl)*stl_value +
           as.integer(blk)*blk_value + as.integer(dd2)*dd2_value + as.integer(td3)*td3_value
       )
   )
