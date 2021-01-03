@@ -4,10 +4,10 @@ Version: 0.0.0.9000
 Authors@R: person("Jason", "Jea", email = "jasonzjea@gmail.com", role = c("cre"))
 Description: Provides a set of functions for interacting with the stats.nba.com API.  Handles setting headers, http response errors, and also unpacking JSON responses into dataframes.  
 Depends: 
-  R (>= 3.5.3)
-  dplyr (>= 1.0.2)
-  tidyr (>= 1.0.2)
-  httr (>= 1.4.2)
+  R (>= 3.5.3),
+  dplyr (>= 1.0.2),
+  tidyr (>= 1.0.2),
+  httr (>= 1.4.2),
   jsonlite (>= 1.7.2)	
 License: What license is it under?
 Encoding: UTF-8
